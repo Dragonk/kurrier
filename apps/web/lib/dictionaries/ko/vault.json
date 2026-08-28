@@ -1,3 +1,9 @@
 {
-  "secretsCount": {"other": "시크릿 {count}개", "one": "시크릿 {count}개", "few": "시크릿 {count}개", "many": "시크릿 {count}개"}
+	"secretsCount": {
+		"zero": "시크릿 {count}개",
+		"other": "시크릿 {count}개",
+		"one": "시크릿 {count}개",
+		"few": "시크릿 {count}개",
+		"many": "시크릿 {count}개"
+	}
 }

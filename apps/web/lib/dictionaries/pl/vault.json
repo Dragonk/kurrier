@@ -44,5 +44,11 @@
 	"deleteConfirmSuffix": "”? Wszystko, co korzysta z tego sekretu, może przestać działać.",
 	"secretDeletedToast": "Usunięto sekret",
 	"couldNotDeleteSecret": "Nie udało się usunąć sekretu",
-  "secretsCount": {"one": "{count} sekret", "few": "{count} sekrety", "many": "{count} sekretów", "other": "{count} sekretów"}
+	"secretsCount": {
+		"zero": "{count} sekretów",
+		"one": "{count} sekret",
+		"few": "{count} sekrety",
+		"many": "{count} sekretów",
+		"other": "{count} sekretów"
+	}
 }

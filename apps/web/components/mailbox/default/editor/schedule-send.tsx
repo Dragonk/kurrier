@@ -1,4 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { getDayjsTz } from "@common/day-js-extended";
+import { Button, Divider, Menu, Modal } from "@mantine/core";
+import { DateTimePicker } from "@mantine/dates";
+import { useDisclosure } from "@mantine/hooks";
+import { getTimeZones } from "@vvo/tzdb";
+import type { Dayjs } from "dayjs";
 import {
 	CalendarClock,
 	Check,
@@ -7,14 +12,8 @@ import {
 	SendHorizonal,
 	X,
 } from "lucide-react";
-import { Button, Divider, Menu, Modal } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { DateTimePicker } from "@mantine/dates";
-import { getTimeZones } from "@vvo/tzdb";
-import { getDayjsTz } from "@common/day-js-extended";
-import { Dayjs } from "dayjs";
+import { useEffect, useMemo, useState } from "react";
 import { useOptionalI18n } from "@/components/providers/dictionary-provider";
-
 
 function ScheduleSend() {
 	const i18n = useOptionalI18n();
@@ -23,11 +22,6 @@ function ScheduleSend() {
 	const [scheduledAt, setScheduledAt] = useState<Date | null>(null);
 
 	const scheduled = !!scheduledAt;
-
-	const label = useMemo(() => {
-		if (!scheduledAt) return dict?.mailbox?.scheduleSend ?? "Schedule Send";
-		return `${dict?.mailbox?.scheduledBullet ?? "Scheduled • "}${format?.date(scheduledAt, { dateStyle: "medium", timeStyle: "short" }) ?? ""}`;
-	}, [scheduledAt, dict]);
 
 	const [opened, { open, close }] = useDisclosure(false);
 	const [pickerOpened, { open: openPicker, close: closePicker }] =
@@ -57,11 +51,6 @@ function ScheduleSend() {
 		() => (pickerValue.isValid() ? pickerValue.toDate() : null),
 		[pickerValue],
 	);
-	const formatted = useMemo(
-		() => (pickerValue.isValid() ? pickerValue.format("DD MMM hh:mm A") : ""),
-		[pickerValue],
-	);
-
 	useEffect(() => {
 		if (!scheduledAt) return;
 		closePicker();
@@ -90,11 +79,7 @@ function ScheduleSend() {
 						const d = dayjsTz(val);
 						if (d.isValid()) setPickerValue(d);
 					}}
-					valueFormat={
-						format?.hourCycle() === "h23" || format?.hourCycle() === "h24"
-							? "DD.MM.YYYY HH:mm"
-							: "DD MMM hh:mm A"
-					}
+					valueFormat={format?.dateTimeInputFormat()}
 					popoverProps={{ zIndex: 1004 }}
 					className="my-4"
 					timePickerProps={{
@@ -136,6 +121,7 @@ function ScheduleSend() {
 				{presets.map((preset) => {
 					return (
 						<button
+							type="button"
 							key={preset.label}
 							className={
 								"w-full px-2 text-left rounded hover:bg-gray-100 flex gap-4 justify-between dark:hover:bg-neutral-700"
@@ -146,7 +132,12 @@ function ScheduleSend() {
 							}}
 						>
 							<span className={"my-1"}>{preset.label}</span>
-							<span>{format?.date(preset.date.toDate(), { dateStyle: "medium", timeStyle: "short" }) ?? ""}</span>
+							<span>
+								{format?.date(preset.date.toDate(), {
+									dateStyle: "medium",
+									timeStyle: "short",
+								}) ?? ""}
+							</span>
 						</button>
 					);
 				})}
@@ -212,7 +203,10 @@ function ScheduleSend() {
 								</>
 							) : (
 								<span className="text-[11px] leading-none text-white/90">
-									{format?.date(scheduledAt!, { dateStyle: "medium", timeStyle: "short" }) ?? ""}
+									{format?.date(scheduledAt!, {
+										dateStyle: "medium",
+										timeStyle: "short",
+									}) ?? ""}
 								</span>
 							)}
 						</span>
@@ -235,7 +229,10 @@ function ScheduleSend() {
 								leftSection={<Check size={14} />}
 								rightSection={
 									<span className="text-[11px] text-neutral-500">
-										{format?.date(scheduledAt!, { dateStyle: "medium", timeStyle: "short" }) ?? ""}
+										{format?.date(scheduledAt!, {
+											dateStyle: "medium",
+											timeStyle: "short",
+										}) ?? ""}
 									</span>
 								}
 								onClick={() => {}}

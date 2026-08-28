@@ -6,8 +6,11 @@ import "dayjs/locale/pl";
 import "dayjs/locale/pt-br";
 import "dayjs/locale/ru";
 import type { Dictionary } from "@/lib/dictionaries";
-import { createLocaleFormatter, type LocaleFormatter } from "@/lib/locale-format";
 import { DAYJS_LOCALES } from "@/lib/locale";
+import {
+	createLocaleFormatter,
+	type LocaleFormatter,
+} from "@/lib/locale-format";
 
 type I18n = {
 	dict: Dictionary;
@@ -15,6 +18,10 @@ type I18n = {
 };
 
 const Ctx = createContext<I18n | null>(null);
+const FALLBACK_I18N = {
+	dict: undefined,
+	format: createLocaleFormatter("en"),
+};
 
 export function DictionaryProvider({
 	dict,
@@ -28,9 +35,7 @@ export function DictionaryProvider({
 	}, [dict.locale]);
 
 	return (
-		<Ctx.Provider
-			value={{ dict, format: createLocaleFormatter(dict.locale) }}
-		>
+		<Ctx.Provider value={{ dict, format: createLocaleFormatter(dict.locale) }}>
 			{children}
 		</Ctx.Provider>
 	);
@@ -56,12 +61,11 @@ export function useOptionalDictionary() {
 /** Returns the dictionary and locale formatter for client components. */
 export function useI18n() {
 	const ctx = useContext(Ctx);
-	if (!ctx)
-		throw new Error("useI18n must be used within <DictionaryProvider>");
+	if (!ctx) throw new Error("useI18n must be used within <DictionaryProvider>");
 	return ctx;
 }
 
-/** Optional variant for shared components rendered outside the provider. */
+/** Optional dictionary with an English formatter fallback outside the provider. */
 export function useOptionalI18n() {
-	return useContext(Ctx);
+	return useContext(Ctx) ?? FALLBACK_I18N;
 }

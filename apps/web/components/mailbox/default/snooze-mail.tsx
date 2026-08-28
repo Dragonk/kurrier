@@ -1,16 +1,15 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { Button, Divider, Modal, Tooltip } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { DateTimePicker } from "@mantine/dates";
-import { getTimeZones } from "@vvo/tzdb";
 import { getDayjsTz } from "@common/day-js-extended";
-import { Dayjs } from "dayjs";
+import { Button, Divider, Modal, Tooltip } from "@mantine/core";
+import { DateTimePicker } from "@mantine/dates";
+import { useDisclosure } from "@mantine/hooks";
+import { getTimeZones } from "@vvo/tzdb";
+import type { Dayjs } from "dayjs";
 import { CalendarClock, Clock4, X } from "lucide-react";
-import { snoozeThread } from "@/lib/actions/mailbox";
+import React, { useMemo, useState } from "react";
 import { useOptionalI18n } from "@/components/providers/dictionary-provider";
-
+import { snoozeThread } from "@/lib/actions/mailbox";
 
 type Props = {
 	mailboxThreadId: string;
@@ -72,7 +71,7 @@ export default function SnoozeMail({
 	const label = useMemo(() => {
 		if (!snoozedUntil) return dict?.mailbox?.snooze ?? "Snooze";
 		return `${dict?.mailbox?.snoozedBullet ?? "Snoozed • "}${format?.date(snoozedUntil, { dateStyle: "medium", timeStyle: "short" }) ?? ""}`;
-	}, [snoozedUntil, dict]);
+	}, [snoozedUntil, dict, format]);
 
 	async function commit(next: Date | null) {
 		if (saving) return;
@@ -114,11 +113,7 @@ export default function SnoozeMail({
 						const d = dayjsTz(val);
 						if (d.isValid()) setPickerValue(d);
 					}}
-					valueFormat={
-						format?.hourCycle() === "h23" || format?.hourCycle() === "h24"
-							? "DD.MM.YYYY HH:mm"
-							: "DD MMM hh:mm A"
-					}
+					valueFormat={format?.dateTimeInputFormat()}
 					popoverProps={{ zIndex: 1004 }}
 					className="my-4"
 					timePickerProps={{
@@ -168,7 +163,12 @@ export default function SnoozeMail({
 						onClick={() => commit(preset.date.toDate())}
 					>
 						<span className="my-1">{preset.label}</span>
-						<span>{format?.date(preset.date.toDate(), { dateStyle: "medium", timeStyle: "short" }) ?? ""}</span>
+						<span>
+							{format?.date(preset.date.toDate(), {
+								dateStyle: "medium",
+								timeStyle: "short",
+							}) ?? ""}
+						</span>
 					</button>
 				))}
 

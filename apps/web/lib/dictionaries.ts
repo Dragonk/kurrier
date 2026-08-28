@@ -1,6 +1,6 @@
 import "server-only";
-import { createLocaleFormatter } from "@/lib/locale-format";
 import { hasLocale, type Locale } from "@/lib/locale";
+import { createLocaleFormatter } from "@/lib/locale-format";
 
 async function loadEn() {
 	const [
