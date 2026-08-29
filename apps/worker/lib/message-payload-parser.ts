@@ -26,6 +26,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { getRedis } from "../lib/get-redis";
 import {s3} from "../lib/create-s3-client";
 import {PutObjectCommand} from "@aws-sdk/client-s3";
+import { enqueueNewMailPush } from "../lib/web-push";
 import {upsertWorkspaceSharedContactFromMessage} from "../lib/message-parser-contacts";
 
 const SEARCH_BATCH_SIZE = 100;
@@ -421,6 +422,9 @@ export async function parseAndStoreEmail(
 
 		return null;
 	}
+
+	const { webPushQueue } = await getRedis();
+	await enqueueNewMailPush(message.id, ownerId, webPushQueue);
 
 	await db
 		.update(workspaces)
