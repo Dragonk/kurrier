@@ -32,7 +32,10 @@ async function ThreadContent({
 		mailboxSlug,
 	);
 
-	const activeThread = await fetchWebMailThreadDetail(threadId);
+	const activeThread = await fetchWebMailThreadDetail(
+		threadId,
+		activeMailbox.id,
+	);
 
 	const { byMessageId } = await fetchThreadMailSubscriptions({
 		ownerId: activeMailbox.ownerId,
