@@ -3,7 +3,7 @@
 import type { ComboboxItem } from "@mantine/core";
 import type { CalendarState } from "@schema";
 import { Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import GuestList, {
 	type UiGuest,
 	type UiGuestStatus,
@@ -11,6 +11,7 @@ import GuestList, {
 import SearchableContacts from "@/components/dashboard/contacts/searchable-contacts";
 import { useI18n } from "@/components/providers/dictionary-provider";
 import { useDynamicContext } from "@/hooks/use-dynamic-context";
+import { getCalendarEventInstanceKey } from "@/lib/calendar-event-identity";
 
 type SearchableContactsOption = ComboboxItem & {
 	row?: {
@@ -32,6 +33,7 @@ function AddGuests({
 	const { state } = useDynamicContext<CalendarState>();
 	const editEvent = state.activePopoverEditEvent;
 	const editEventId = editEvent?.id || "";
+	const editEventInstanceKey = getCalendarEventInstanceKey(editEvent);
 
 	const attendeeContacts = state.attendeeContacts ?? [];
 
@@ -66,10 +68,14 @@ function AddGuests({
 	);
 
 	const [newGuests, setNewGuests] = useState<UiGuest[]>([]);
+	const previousEditEventInstanceKey = useRef(editEventInstanceKey);
 
 	useEffect(() => {
+		if (previousEditEventInstanceKey.current === editEventInstanceKey) return;
+
+		previousEditEventInstanceKey.current = editEventInstanceKey;
 		setNewGuests([]);
-	}, []);
+	}, [editEventInstanceKey]);
 
 	const allGuests = useMemo(() => {
 		const map = new Map<string, UiGuest>();

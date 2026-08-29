@@ -6,6 +6,7 @@ import type React from "react";
 import CalendarAddEventPopover from "@/components/dashboard/calendars/calendar-add-event-popover";
 import { useI18n } from "@/components/providers/dictionary-provider";
 import { useDynamicContext } from "@/hooks/use-dynamic-context";
+import { buildCalendarEventAriaLabel } from "@/lib/calendar-event-accessibility";
 
 type FragmentCellProps = {
 	fragment: EventSlotRenderFragment;
@@ -30,6 +31,17 @@ function FragmentCell({
 	const start = dayjsTz(fragment.event.startsAt);
 	const end = dayjsTz(fragment.event.endsAt);
 	const popoverKey = fragment.event?.instanceId ?? fragment.event.id;
+	const startTime = format.time(start.toDate(), {
+		timeZone: state.defaultCalendar.timezone,
+	});
+	const endTime = format.time(end.toDate(), {
+		timeZone: state.defaultCalendar.timezone,
+	});
+	const eventAriaLabel = buildCalendarEventAriaLabel(
+		fragment.event.title,
+		startTime,
+		endTime,
+	);
 
 	const openEventEditor = () => {
 		setState((prev) => ({
@@ -61,6 +73,8 @@ function FragmentCell({
 			<button
 				type="button"
 				className="absolute border-0 bg-brand/80 px-1 text-left text-white rounded-sm shadow-xl text-[10px] leading-tight overflow-hidden cursor-pointer pointer-events-auto"
+				aria-label={eventAriaLabel}
+				title={eventAriaLabel}
 				style={{
 					top: `${fragment.topPercent}%`,
 					height: `${fragment.heightPercent}%`,
@@ -70,21 +84,12 @@ function FragmentCell({
 				onClick={handleEventClick}
 			>
 				{showTitle && (
-					<div
-						className={"flex flex-wrap"}
-						title={`${fragment.event.title} - ${format.time(start.toDate(), { timeZone: state.defaultCalendar.timezone })} - ${format.time(end.toDate(), { timeZone: state.defaultCalendar.timezone })}`}
-					>
+					<div className={"flex flex-wrap"}>
 						<div className="truncate font-medium text-xs">
 							{fragment.event.title}
 						</div>
 						<div className="truncate font-medium text-xs mx-1">
-							{format.time(start.toDate(), {
-								timeZone: state.defaultCalendar.timezone,
-							})}{" "}
-							-{" "}
-							{format.time(end.toDate(), {
-								timeZone: state.defaultCalendar.timezone,
-							})}
+							{startTime} - {endTime}
 						</div>
 					</div>
 				)}

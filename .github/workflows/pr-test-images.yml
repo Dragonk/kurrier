@@ -41,8 +41,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ghcr.io/${{ github.repository_owner }}/kurrier-${{ matrix.service }}:pr-616
-            ghcr.io/${{ github.repository_owner }}/kurrier-${{ matrix.service }}:sha-${{ github.sha }}
+            ghcr.io/dragonk/kurrier-${{ matrix.service }}:pr-616
+            ghcr.io/dragonk/kurrier-${{ matrix.service }}:sha-${{ github.sha }}
           build-args: |
             WEB_URL=http://localhost:3000
             WORKER_URL=http://worker
