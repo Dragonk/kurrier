@@ -1,11 +1,11 @@
 "use client";
 
-import React from "react";
-import type { EventSlotRenderFragment, CalendarState } from "@schema";
-import CalendarAddEventPopover from "@/components/dashboard/calendars/calendar-add-event-popover";
-import { useDynamicContext } from "@/hooks/use-dynamic-context";
 import { getDayjsTz } from "@common/day-js-extended";
-import { useOptionalI18n } from "@/components/providers/dictionary-provider";
+import type { CalendarState, EventSlotRenderFragment } from "@schema";
+import type React from "react";
+import CalendarAddEventPopover from "@/components/dashboard/calendars/calendar-add-event-popover";
+import { useI18n } from "@/components/providers/dictionary-provider";
+import { useDynamicContext } from "@/hooks/use-dynamic-context";
 
 type FragmentCellProps = {
 	fragment: EventSlotRenderFragment;
@@ -19,8 +19,7 @@ function FragmentCell({
 	showTitle,
 }: FragmentCellProps) {
 	const { state, setState } = useDynamicContext<CalendarState>();
-	const i18n = useOptionalI18n();
-	const format = i18n?.format;
+	const { format } = useI18n();
 
 	const colCount = fragment.columnCount ?? fallbackCount;
 	const colWidth = 90 / colCount;
@@ -32,13 +31,18 @@ function FragmentCell({
 	const end = dayjsTz(fragment.event.endsAt);
 	const popoverKey = fragment.event?.instanceId ?? fragment.event.id;
 
-	const handleEventClick: React.MouseEventHandler<HTMLDivElement> = (ev) => {
-		ev.stopPropagation();
+	const openEventEditor = () => {
 		setState((prev) => ({
 			...prev,
 			activePopoverEditEvent: fragment.event,
 			activePopoverId: popoverKey,
 		}));
+	};
+	const handleEventClick: React.MouseEventHandler<HTMLButtonElement> = (
+		event,
+	) => {
+		event.stopPropagation();
+		openEventEditor();
 	};
 
 	return (
@@ -54,8 +58,9 @@ function FragmentCell({
 			start={start}
 			end={end}
 		>
-			<div
-				className="absolute bg-brand/80 px-1 text-white rounded-sm shadow-xl text-[10px] leading-tight overflow-hidden cursor-pointer pointer-events-auto"
+			<button
+				type="button"
+				className="absolute border-0 bg-brand/80 px-1 text-left text-white rounded-sm shadow-xl text-[10px] leading-tight overflow-hidden cursor-pointer pointer-events-auto"
 				style={{
 					top: `${fragment.topPercent}%`,
 					height: `${fragment.heightPercent}%`,
@@ -67,23 +72,23 @@ function FragmentCell({
 				{showTitle && (
 					<div
 						className={"flex flex-wrap"}
-						title={`${fragment.event.title} - ${format?.time(start.toDate(), { timeZone: state.defaultCalendar.timezone }) ?? ""} - ${format?.time(end.toDate(), { timeZone: state.defaultCalendar.timezone }) ?? ""}`}
+						title={`${fragment.event.title} - ${format.time(start.toDate(), { timeZone: state.defaultCalendar.timezone })} - ${format.time(end.toDate(), { timeZone: state.defaultCalendar.timezone })}`}
 					>
 						<div className="truncate font-medium text-xs">
 							{fragment.event.title}
 						</div>
 						<div className="truncate font-medium text-xs mx-1">
-							{format?.time(start.toDate(), {
+							{format.time(start.toDate(), {
 								timeZone: state.defaultCalendar.timezone,
-							}) ?? ""}{" "}
+							})}{" "}
 							-{" "}
-							{format?.time(end.toDate(), {
+							{format.time(end.toDate(), {
 								timeZone: state.defaultCalendar.timezone,
-							}) ?? ""}
+							})}
 						</div>
 					</div>
 				)}
-			</div>
+			</button>
 		</CalendarAddEventPopover>
 	);
 }

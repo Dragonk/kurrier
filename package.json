@@ -17,6 +17,7 @@
 		"lint": "biome check",
 		"format": "biome format --write",
 		"check:locales": "tsx scripts/check-locales.ts",
+		"test:locale-format": "tsx scripts/test-locale-format.ts",
 		"changeset": "changeset",
 		"publish-packages": "changeset publish",
 		"version-packages": "changeset version && pnpm install -w --no-frozen-lockfile && git add -A"

@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import { ComboboxItem } from "@mantine/core";
+import type { ComboboxItem } from "@mantine/core";
+import type { CalendarState } from "@schema";
 import { Users } from "lucide-react";
-import SearchableContacts from "@/components/dashboard/contacts/searchable-contacts";
-import { useDynamicContext } from "@/hooks/use-dynamic-context";
-import { CalendarState } from "@schema";
+import { useEffect, useMemo, useState } from "react";
 import GuestList, {
-	UiGuest,
-	UiGuestStatus,
+	type UiGuest,
+	type UiGuestStatus,
 } from "@/components/dashboard/calendars/guest-list";
-import { useOptionalI18n } from "@/components/providers/dictionary-provider";
+import SearchableContacts from "@/components/dashboard/contacts/searchable-contacts";
+import { useI18n } from "@/components/providers/dictionary-provider";
+import { useDynamicContext } from "@/hooks/use-dynamic-context";
 
 type SearchableContactsOption = ComboboxItem & {
 	row?: {
@@ -28,9 +28,7 @@ function AddGuests({
 	name: string;
 	onChange?: (value: string[]) => void;
 }) {
-	const i18n = useOptionalI18n();
-	const dict = i18n?.dict;
-	const format = i18n?.format;
+	const { dict, format } = useI18n();
 	const { state } = useDynamicContext<CalendarState>();
 	const editEvent = state.activePopoverEditEvent;
 	const editEventId = editEvent?.id || "";
@@ -38,8 +36,8 @@ function AddGuests({
 	const attendeeContacts = state.attendeeContacts ?? [];
 
 	const contactsByEmail = useMemo(() => {
-		const map = new Map<string, any>();
-		attendeeContacts.forEach((c: any) => {
+		const map = new Map<string, (typeof attendeeContacts)[number]>();
+		attendeeContacts.forEach((c) => {
 			if (c.email) {
 				map.set(String(c.email).trim().toLowerCase(), c);
 			}
@@ -47,10 +45,7 @@ function AddGuests({
 		return map;
 	}, [attendeeContacts]);
 
-
-
 	const persistedAttendees = state.calendarEventAttendees?.[editEventId] || [];
-
 
 	const initialGuests = useMemo<UiGuest[]>(
 		() =>
@@ -74,12 +69,16 @@ function AddGuests({
 
 	useEffect(() => {
 		setNewGuests([]);
-	}, [editEventId]);
+	}, []);
 
 	const allGuests = useMemo(() => {
 		const map = new Map<string, UiGuest>();
-		initialGuests.forEach((g) => map.set(g.email.toLowerCase(), g));
-		newGuests.forEach((g) => map.set(g.email.toLowerCase(), g));
+		initialGuests.forEach((guest) => {
+			map.set(guest.email.toLowerCase(), guest);
+		});
+		newGuests.forEach((guest) => {
+			map.set(guest.email.toLowerCase(), guest);
+		});
 
 		const merged = Array.from(map.values());
 		merged.sort((a, b) => Number(b.isOrganizer) - Number(a.isOrganizer));
@@ -129,7 +128,9 @@ function AddGuests({
 
 	return (
 		<>
-			<div className="text-sm my-1.5 font-medium">{dict?.calendar?.addGuests ?? "Add guests"}</div>
+			<div className="text-sm my-1.5 font-medium">
+				{dict?.calendar?.addGuests ?? "Add guests"}
+			</div>
 
 			<SearchableContacts onChange={handleAddGuest} />
 
@@ -145,7 +146,7 @@ function AddGuests({
 			<div className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
 				<Users size={14} className="shrink-0" />
 				<span className="font-medium">
-					{format?.message(guestCount, dict?.calendar?.guestsCount ?? { other: "{count} guests" }) ?? `${guestCount} guests`}
+					{format.message(guestCount, dict.calendar.guestsCount)}
 				</span>
 			</div>
 		</>

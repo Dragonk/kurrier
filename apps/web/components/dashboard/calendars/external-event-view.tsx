@@ -1,18 +1,23 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { CalendarState } from "@schema";
-import { useDynamicContext } from "@/hooks/use-dynamic-context";
-import GuestList from "@/components/dashboard/calendars/guest-list";
-import { CheckCircle, CircleDashed, CircleX, Trash } from "lucide-react";
+import { getDayjsTz } from "@common/day-js-extended";
+import type { CalendarEventAttendeeEntity } from "@db";
+import type {
+	CalendarOrganizerType,
+	CalendarState,
+	ComposeContact,
+} from "@schema";
+import { CheckCircle, CircleDashed, CircleX } from "lucide-react";
+import { useMemo } from "react";
 import { ReusableFormButton } from "@/components/common/reusable-form-button";
+import GuestList from "@/components/dashboard/calendars/guest-list";
+import { useI18n } from "@/components/providers/dictionary-provider";
+import { useDynamicContext } from "@/hooks/use-dynamic-context";
 import {
 	maybeCalendarInvite,
 	noCalendarInvite,
 	yesCalendarInvite,
 } from "@/lib/actions/calendar";
-import { getDayjsTz } from "@common/day-js-extended";
-import { useOptionalI18n } from "@/components/providers/dictionary-provider";
 
 type UiGuestStatus =
 	| "accepted"
@@ -22,9 +27,7 @@ type UiGuestStatus =
 	| null;
 
 function ExternalEventView() {
-	const i18n = useOptionalI18n();
-	const dict = i18n?.dict;
-	const format = i18n?.format;
+	const { dict, format } = useI18n();
 	const { state } = useDynamicContext<CalendarState>();
 	const editEvent = state.activePopoverEditEvent ?? null;
 	const editEventId = editEvent?.id ?? null;
@@ -36,8 +39,8 @@ function ExternalEventView() {
 	const dayjsTz = getDayjsTz(state.defaultCalendar.timezone);
 
 	const contactsByEmail = useMemo(() => {
-		const map = new Map<string, any>();
-		attendeeContacts.forEach((c: any) => {
+		const map = new Map<string, ComposeContact>();
+		attendeeContacts.forEach((c) => {
 			if (c.email) {
 				const e = String(c.email).trim().toLowerCase();
 				if (e) map.set(e, c);
@@ -48,7 +51,7 @@ function ExternalEventView() {
 
 	const guests = useMemo(
 		() =>
-			attendeesRaw.map((a: any) => {
+			attendeesRaw.map((a: CalendarEventAttendeeEntity) => {
 				const email = String(a.email ?? "")
 					.trim()
 					.toLowerCase();
@@ -58,7 +61,7 @@ function ExternalEventView() {
 				return {
 					email,
 					name: contact?.name ?? a.name ?? null,
-					avatar: contact?.avatar ?? a.avatar ?? null,
+					avatar: contact?.avatar ?? null,
 					isOrganizer: a.isOrganizer ?? false,
 					isPersisted: true,
 					attendeeId: a.id,
@@ -71,12 +74,7 @@ function ExternalEventView() {
 	const myEmails = useMemo(() => {
 		const set = new Set<string>();
 
-		(state.organizers ?? []).forEach((org: any) => {
-			if (org.email) {
-				const e = String(org.email).trim().toLowerCase();
-				if (e) set.add(e);
-			}
-
+		(state.organizers ?? []).forEach((org: CalendarOrganizerType) => {
 			if (typeof org.value === "string" && org.value.includes("@")) {
 				const e = org.value.trim().toLowerCase();
 				if (e) set.add(e);
@@ -106,12 +104,12 @@ function ExternalEventView() {
 
 	const dateLabel =
 		start && end
-			? `${format?.date(start.toDate(), {
-						weekday: "short",
-						day: "numeric",
-						month: "short",
-						timeZone: state.defaultCalendar.timezone,
-					}) ?? ""} · ${format?.time(start.toDate(), { timeZone: state.defaultCalendar.timezone }) ?? ""} – ${format?.time(end.toDate(), { timeZone: state.defaultCalendar.timezone }) ?? ""} (${start.format("z")})`
+			? `${format.date(start.toDate(), {
+					weekday: "short",
+					day: "numeric",
+					month: "short",
+					timeZone: state.defaultCalendar.timezone,
+				})} · ${format.time(start.toDate(), { timeZone: state.defaultCalendar.timezone })} – ${format.time(end.toDate(), { timeZone: state.defaultCalendar.timezone })} (${start.format("z")})`
 			: "";
 
 	const organizerLabel =

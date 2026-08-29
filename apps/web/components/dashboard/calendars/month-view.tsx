@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useDynamicContext } from "@/hooks/use-dynamic-context";
-import {
+import { getDayjsTz } from "@common/day-js-extended";
+import type { CalendarEventAttendeeEntity, CalendarEventEntity } from "@db";
+import type {
 	AllDayFragment,
 	CalendarState,
 	ComposeContact,
 	EventSlotFragment,
 } from "@schema";
 import { useParams, useRouter } from "next/navigation";
-import { CalendarEventAttendeeEntity, CalendarEventEntity } from "@db";
-import { getDayjsTz } from "@common/day-js-extended";
-import { useOptionalI18n } from "@/components/providers/dictionary-provider";
+import React, { useEffect } from "react";
+import { useI18n } from "@/components/providers/dictionary-provider";
+import { useDynamicContext } from "@/hooks/use-dynamic-context";
 
 type MonthGridProps = {
 	events: CalendarEventEntity[];
@@ -19,7 +19,7 @@ type MonthGridProps = {
 	byDayMap: Map<string, EventSlotFragment[]>;
 	attendeeContacts: Promise<ComposeContact[]>;
 	allDayByDay: Map<string, AllDayFragment[]>;
-	workspacePublicId: string
+	workspacePublicId: string;
 };
 
 const MAX_ITEMS_PER_DAY = 4;
@@ -29,11 +29,9 @@ export default function MonthGrid({
 	attendees,
 	byDayMap,
 	attendeeContacts,
-	workspacePublicId
+	workspacePublicId,
 }: MonthGridProps) {
-	const i18n = useOptionalI18n();
-	const dict = i18n?.dict;
-	const format = i18n?.format;
+	const { dict, format } = useI18n();
 	const { state, setState } = useDynamicContext<CalendarState>();
 	const params = useParams();
 	const router = useRouter();
@@ -125,9 +123,10 @@ export default function MonthGrid({
 						: "bg-neutral-50 dark:bg-neutral-900";
 
 					return (
-						<div
+						<button
 							key={dayMeta.key}
-							className={`${baseCellClasses} ${monthTint} border-b hover:bg-brand-100 dark:hover:bg-brand-900/40 transition-colors duration-150`}
+							type="button"
+							className={`${baseCellClasses} ${monthTint} border-b hover:bg-brand-100 dark:hover:bg-brand-900/40 text-left transition-colors duration-150`}
 							onClick={() => goToDay(dayMeta.date)}
 						>
 							<div className="flex items-center justify-between mb-2">
@@ -148,10 +147,12 @@ export default function MonthGrid({
 								{visibleSlots.map((slot) => {
 									const ev = slot.event;
 									const key = ev.instanceId ?? ev.id;
-									const title = ev.title?.trim() || (dict?.calendar?.noTitle ?? "(no title)");
+									const title = ev.title?.trim() || dict.calendar.noTitle;
 									const startLabel = ev.isAllDay
 										? null
-										: format?.time(dayjsTz(ev.startsAt).toDate(), { timeZone: state.defaultCalendar.timezone }) ?? "";
+										: format.time(dayjsTz(ev.startsAt).toDate(), {
+												timeZone: state.defaultCalendar.timezone,
+											});
 
 									return (
 										<div
@@ -169,11 +170,11 @@ export default function MonthGrid({
 
 								{remaining > 0 && (
 									<div className="text-[10px] text-brand-600 dark:text-brand-400 mt-0.5">
-										+{remaining} {dict?.calendar?.more ?? "more"}
+										+{remaining} {dict.calendar.more}
 									</div>
 								)}
 							</div>
-						</div>
+						</button>
 					);
 				})}
 			</div>

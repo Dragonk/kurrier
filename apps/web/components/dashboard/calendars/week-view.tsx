@@ -1,7 +1,7 @@
 "use client";
-import React, { useEffect } from "react";
-import { useDynamicContext } from "@/hooks/use-dynamic-context";
-import {
+import { getDayjsTz } from "@common/day-js-extended";
+import type { CalendarEventAttendeeEntity, CalendarEventEntity } from "@db";
+import type {
 	AllDayFragment,
 	CalendarState,
 	ComposeContact,
@@ -9,22 +9,24 @@ import {
 	EventSlotRenderFragment,
 } from "@schema";
 import { useParams } from "next/navigation";
+import React, { useEffect } from "react";
+import AllDayEventsRow from "@/components/dashboard/calendars/all-day-events-row";
 import CalendarDayHourBox from "@/components/dashboard/calendars/calendar-day-hour-box";
-import { CalendarEventAttendeeEntity, CalendarEventEntity } from "@db";
+import CalendarEventsLayer from "@/components/dashboard/calendars/calendar-events-layer";
 import {
 	layoutDayFragments,
 	splitFragmentIntoHours,
 } from "@/components/dashboard/calendars/client-helpers";
-import CalendarEventsLayer from "@/components/dashboard/calendars/calendar-events-layer";
-import { getDayjsTz } from "@common/day-js-extended";
-import AllDayEventsRow from "@/components/dashboard/calendars/all-day-events-row";
-import dayjs from "dayjs";
-import { useOptionalI18n } from "@/components/providers/dictionary-provider";
+import { useI18n } from "@/components/providers/dictionary-provider";
+import { useDynamicContext } from "@/hooks/use-dynamic-context";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
-function formatHourLabel(hour: number, format?: { time: (value: Date) => string }) {
-	return format?.time(dayjs().hour(hour).minute(0).toDate()) ?? "";
+function formatHourLabel(
+	hour: number,
+	format: { timeOfDay: (hour: number) => string },
+) {
+	return format.timeOfDay(hour);
 }
 
 export function WeekGrid({
@@ -40,8 +42,7 @@ export function WeekGrid({
 	attendeeContacts: Promise<ComposeContact[]>;
 	allDayByDay: Map<string, AllDayFragment[]>;
 }) {
-	const i18n = useOptionalI18n();
-	const format = i18n?.format;
+	const { format } = useI18n();
 	const { setState, state } = useDynamicContext<CalendarState>();
 	const params = useParams();
 	const dayjsTz = getDayjsTz(state.defaultCalendar.timezone);
@@ -54,7 +55,7 @@ export function WeekGrid({
 			calendarEventAttendees: attendees,
 			attendeeContacts: contacts,
 		}));
-	}, [events, setState, attendees]);
+	}, [events, setState, attendees, contacts]);
 
 	const baseDay =
 		params.year && params.month && params.day

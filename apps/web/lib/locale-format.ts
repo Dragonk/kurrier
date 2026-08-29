@@ -52,6 +52,18 @@ export function createLocaleFormatter(locale: string | undefined) {
 			});
 		},
 
+		timeOfDay(hour: number) {
+			if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
+				throw new RangeError("hour must be an integer from 0 through 23");
+			}
+
+			return date(new Date(Date.UTC(2026, 0, 15, hour)), {
+				hour: "2-digit",
+				minute: "2-digit",
+				timeZone: "UTC",
+			});
+		},
+
 		number(value: number, options?: Intl.NumberFormatOptions) {
 			return options
 				? new Intl.NumberFormat(resolvedLocale, options).format(value)

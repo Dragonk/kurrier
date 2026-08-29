@@ -30,7 +30,7 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { Container } from "@/components/common/containers";
-import { useOptionalI18n } from "@/components/providers/dictionary-provider";
+import { useI18n } from "@/components/providers/dictionary-provider";
 import type { FetchVaultSecretsResult } from "@/lib/actions/vault";
 
 type VaultSecret = FetchVaultSecretsResult[number];
@@ -38,11 +38,14 @@ type VaultSecret = FetchVaultSecretsResult[number];
 type ManageVaultProps = {
 	secrets: VaultSecret[];
 
-	createSecret: (formData: FormData) => Promise<any>;
+	createSecret: (formData: FormData) => Promise<{ success: boolean }>;
 
-	updateSecret: (id: string, formData: FormData) => Promise<any>;
+	updateSecret: (
+		id: string,
+		formData: FormData,
+	) => Promise<{ success: boolean }>;
 
-	deleteSecret: (id: string) => Promise<any>;
+	deleteSecret: (id: string) => Promise<{ success: boolean }>;
 
 	revealSecret: (id: string) => Promise<{ value: string }>;
 };
@@ -54,9 +57,7 @@ export default function ManageVault({
 	deleteSecret,
 	revealSecret,
 }: ManageVaultProps) {
-	const i18n = useOptionalI18n();
-	const dict = i18n?.dict;
-	const format = i18n?.format;
+	const { dict, format } = useI18n();
 	const [opened, setOpened] = React.useState(false);
 	const [editing, setEditing] = React.useState<VaultSecret | null>(null);
 
@@ -191,7 +192,7 @@ export default function ManageVault({
 		});
 	};
 
-	const formatDate = (value: Date | string) =>
+	const _formatDate = (value: Date | string) =>
 		new Intl.DateTimeFormat(undefined, {
 			dateStyle: "medium",
 		}).format(value instanceof Date ? value : new Date(value));
@@ -234,7 +235,10 @@ export default function ManageVault({
 
 					{secrets.length > 0 && (
 						<Badge variant="light" radius="sm">
-							{format?.message(secrets.length, dict?.vault?.secretsCount ?? { other: "{count} secrets" }) ?? `${secrets.length} secrets`}
+							{format?.message(
+								secrets.length,
+								dict?.vault?.secretsCount ?? { other: "{count} secrets" },
+							) ?? `${secrets.length} secrets`}
 						</Badge>
 					)}
 				</div>
