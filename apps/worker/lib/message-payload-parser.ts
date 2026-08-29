@@ -439,17 +439,16 @@ export async function parseAndStoreEmail(
 		return null;
 	}
 
-	if (!existingMessage) {
-		const { webPushQueue } = await getRedis();
-		for (const subscription of pushSubscriptions) {
-			await webPushQueue.add("web-push:deliver", { messageId: message.id, subscriptionId: subscription.id }, {
-				jobId: `web-push:${message.id}:${subscription.id}`,
-				attempts: 5,
-				backoff: { type: "exponential", delay: 5000 },
-				removeOnComplete: true,
-				removeOnFail: false,
-			});
-		}
+	const { webPushQueue } = await getRedis();
+	for (const subscription of pushSubscriptions) {
+		await webPushQueue.add("web-push:deliver", { messageId: message.id, subscriptionId: subscription.id }, {
+			jobId: `web-push:${message.id}:${subscription.id}`,
+			attempts: 5,
+			backoff: { type: "exponential", delay: 5000 },
+			removeOnComplete: true,
+			removeOnFail: false,
+		});
+
 	}
 
 	await db
