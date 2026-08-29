@@ -1,33 +1,32 @@
-import { simpleParser, ParsedMail, Attachment } from "mailparser";
-import {
-	db,
-	messages,
-	messageAttachments,
-	threads,
-	MessageInsertSchema,
-	MessageCreate,
-	MessageAttachmentCreate,
-	MessageAttachmentInsertSchema,
-	mailSubscriptions,
-	mailboxes,
-	workspaces,
-} from "@db";
+import { randomUUID } from "node:crypto";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import {
 	buildThreadingCandidates,
 	extractThreadingHeader,
-	fallbackMessageId,
+	generateSnippet,
 	resolveMessageId,
 	selectThreadParent,
-	generateSnippet,
 	upsertMailboxThreadItem,
 } from "@common";
-import { randomUUID } from "node:crypto";
+import {
+	db,
+	MessageAttachmentCreate,
+	MessageAttachmentInsertSchema,
+	MessageCreate,
+	MessageInsertSchema,
+	mailSubscriptions,
+	mailboxes,
+	messageAttachments,
+	messages,
+	threads,
+	workspaces,
+} from "@db";
 import { and, eq, inArray, sql } from "drizzle-orm";
+import { type Attachment, type ParsedMail, simpleParser } from "mailparser";
+import { s3 } from "../lib/create-s3-client";
 import { getRedis } from "../lib/get-redis";
-import {s3} from "../lib/create-s3-client";
-import {PutObjectCommand} from "@aws-sdk/client-s3";
+import { upsertWorkspaceSharedContactFromMessage } from "../lib/message-parser-contacts";
 import { enqueueNewMailPush } from "../lib/web-push";
-import {upsertWorkspaceSharedContactFromMessage} from "../lib/message-parser-contacts";
 
 const SEARCH_BATCH_SIZE = 100;
 const WEBHOOK_BATCH_SIZE = 100;
@@ -295,6 +294,8 @@ export async function parseAndStoreEmail(
 		.limit(1);
 
 	if (existingMessage) {
+		const { webPushQueue } = await getRedis();
+		await enqueueNewMailPush(existingMessage.id, existingMessage.ownerId, webPushQueue);
 		const existingMeta =
 			(existingMessage.metaData as Record<string, any>) ?? {};
 
