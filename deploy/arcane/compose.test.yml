@@ -1,0 +1,152 @@
+# Testing-only deployment. Do not point this stack at production data.
+# Copy .env.example to .env and replace every placeholder before starting.
+# Browser traffic must come through the existing Arcane reverse proxy network.
+
+services:
+  web:
+    image: ghcr.io/dragonk/kurrier-web:${KURRIER_IMAGE_TAG:-pr-616}
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      typesense:
+        condition: service_started
+      worker:
+        condition: service_started
+    networks:
+      - internal
+      - arcane_proxy
+
+  worker:
+    image: ghcr.io/dragonk/kurrier-worker:${KURRIER_IMAGE_TAG:-pr-616}
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      typesense:
+        condition: service_started
+      dav:
+        condition: service_started
+    networks:
+      - internal
+
+  postgres:
+    image: postgres:18-bookworm
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - ${KURRIER_DATA_DIR:-/mnt/Dane/kurrier-test}/postgres:/var/lib/postgresql
+      - ${KURRIER_REPO_DIR:-.}/db/init/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - internal
+
+  migrate:
+    image: postgres:18-bookworm
+    profiles: ["bootstrap"]
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+    volumes:
+      - ${KURRIER_REPO_DIR:-.}/db/init:/scripts:ro
+    entrypoint: ["/bin/bash", "/scripts/db-bootstrap.sh"]
+    restart: "no"
+    networks:
+      - internal
+
+  redis:
+    image: redis:8.2.2
+    restart: unless-stopped
+    env_file: .env
+    command: ["redis-server", "--appendonly", "yes", "--stop-writes-on-bgsave-error", "no", "--requirepass", "${REDIS_PASSWORD}"]
+    healthcheck:
+      test: ["CMD-SHELL", 'redis-cli -a "$$REDIS_PASSWORD" PING']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - ${KURRIER_DATA_DIR:-/mnt/Dane/kurrier-test}/redis:/data
+    networks:
+      - internal
+
+  typesense:
+    image: typesense/typesense:29.0
+    restart: unless-stopped
+    env_file: .env
+    command: >-
+      --data-dir /data
+      --api-key=${TYPESENSE_API_KEY}
+      --enable-cors
+    volumes:
+      - ${KURRIER_DATA_DIR:-/mnt/Dane/kurrier-test}/typesense:/data
+    networks:
+      - internal
+
+  garage:
+    image: dxflrs/garage:v2.3.0
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET}
+      GARAGE_DEFAULT_ACCESS_KEY: ${S3_ACCESS_KEY}
+      GARAGE_DEFAULT_SECRET_KEY: ${S3_SECRET_KEY}
+      GARAGE_DEFAULT_BUCKET: ${S3_BUCKET}
+    command: /garage server --single-node --default-bucket
+    volumes:
+      - ${KURRIER_REPO_DIR:-.}/db/init/garage/garage.toml:/etc/garage.toml:ro
+      - ${KURRIER_DATA_DIR:-/mnt/Dane/kurrier-test}/garage/data:/var/lib/garage/data
+      - ${KURRIER_DATA_DIR:-/mnt/Dane/kurrier-test}/garage/meta:/var/lib/garage/meta
+    networks:
+      - internal
+
+  baikal-postgres:
+    image: postgres:18-bookworm
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${DAV_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DAV_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DAV_POSTGRES_DB}
+    volumes:
+      - ${KURRIER_DATA_DIR:-/mnt/Dane/kurrier-test}/baikal-postgres:/var/lib/postgresql
+      - ${KURRIER_REPO_DIR:-.}/db/init/baikal-init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - internal
+
+  dav:
+    image: ckulka/baikal:nginx
+    restart: unless-stopped
+    depends_on:
+      - baikal-postgres
+    volumes:
+      - ${KURRIER_DATA_DIR:-/mnt/Dane/kurrier-test}/dav/config:/var/www/baikal/config
+      - ${KURRIER_DATA_DIR:-/mnt/Dane/kurrier-test}/dav/data:/var/www/baikal/Specific
+    networks:
+      - internal
+
+networks:
+  internal:
+    name: kurrier-test-internal
+  arcane_proxy:
+    external: true
+    name: ${ARCANE_PROXY_NETWORK:?Set ARCANE_PROXY_NETWORK to the existing reverse-proxy network}
