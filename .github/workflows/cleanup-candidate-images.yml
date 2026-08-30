@@ -18,7 +18,7 @@ jobs:
         run: |
           set -euo pipefail
           cutoff_epoch="$(date -u -d '30 days ago' +%s)"
-          for package in kurrier-web kurrier-worker; do
+          for package in kurrier-web kurrier-worker kurrier-bootstrap kurrier-baikal-postgres kurrier-baikal kurrier-garage; do
             versions_file="$(mktemp)"
             trap 'rm -f "${versions_file}"' EXIT
             gh api --paginate "/user/packages/container/${package}/versions?per_page=100" \
