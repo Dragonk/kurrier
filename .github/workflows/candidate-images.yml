@@ -1,0 +1,87 @@
+name: candidate-images
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Reviewed full commit SHA in Dragonk/kurrier
+        required: true
+        type: string
+      candidate_tag:
+        description: Candidate image tag (for example v3.9.6-fr632)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: candidate-images-${{ inputs.candidate_tag }}
+  cancel-in-progress: false
+
+jobs:
+  validate-build-publish:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [web, worker]
+    steps:
+      - name: Validate immutable source and candidate tag
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          CANDIDATE_TAG: ${{ inputs.candidate_tag }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          [[ "${GITHUB_REPOSITORY}" == "Dragonk/kurrier" ]]
+          [[ "${SOURCE_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          [[ "${CANDIDATE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-fr[0-9]+$ ]]
+
+      - name: Check out reviewed source commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 1
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish candidate image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.service }}/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ghcr.io/dragonk/kurrier-${{ matrix.service }}:${{ inputs.candidate_tag }}
+          build-args: |
+            NODE_ENV=production
+            WEB_URL=http://localhost:3000
+            JWT_SECRET=build_dummy_jwt_secret
+            APP_SECRET_ENCRYPTION_KEY=build_dummy_app_secret_encryption_key
+            S3_REGION=garage
+            S3_BUCKET=build-bucket
+            S3_ENDPOINT=http://localhost:3900
+            S3_ACCESS_KEY=build_access_key
+            S3_SECRET_KEY=build_secret_key
+            S3_FORCE_PATH_STYLE=true
+          provenance: true
+          sbom: true
+
+      - name: Make candidate package public
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE: kurrier-${{ matrix.service }}
+        run: |
+          set -euo pipefail
+          gh api --method PATCH \
+            "/user/packages/container/${PACKAGE}/visibility" \
+            -f visibility=public

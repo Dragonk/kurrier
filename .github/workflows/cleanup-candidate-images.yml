@@ -1,0 +1,36 @@
+name: cleanup-candidate-images
+
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  packages: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete candidate image versions older than 30 days
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cutoff_epoch="$(date -u -d '30 days ago' +%s)"
+          for package in kurrier-web kurrier-worker; do
+            versions_file="$(mktemp)"
+            trap 'rm -f "${versions_file}"' EXIT
+            gh api --paginate "/user/packages/container/${package}/versions?per_page=100" \
+              --jq '.[] | select((.metadata.container.tags // []) | any(test("^v[0-9]+\\.[0-9]+\\.[0-9]+-fr[0-9]+$"))) | [.id, .created_at] | @tsv' \
+              > "${versions_file}"
+            while IFS=$'\t' read -r version_id created_at; do
+              [ -n "${version_id}" ] || continue
+              created_epoch="$(date -u -d "${created_at}" +%s)"
+              if [ "${created_epoch}" -lt "${cutoff_epoch}" ]; then
+                gh api --method DELETE "/user/packages/container/${package}/versions/${version_id}"
+              fi
+            done < "${versions_file}"
+            rm -f "${versions_file}"
+            trap - EXIT
+          done
