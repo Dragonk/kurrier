@@ -31,6 +31,7 @@ for service, dockerfile in {
 }.items():
     assert f"- service: {service}\n            dockerfile: {dockerfile}" in WORKFLOW
 assert "COPY db/init/migrations /scripts/migrations" in BOOTSTRAP
+assert "COPY db/init/init.sql" not in BOOTSTRAP
 assert "COPY deploy/images/baikal/entrypoint.sh /usr/local/bin/kurrier-baikal-entrypoint.sh" in BAIKAL
 assert "exec /docker-entrypoint.sh \"$@\"" in ENTRYPOINT
 assert "DAV_CONFIG_ENCRYPTION_KEY" in GENERATOR

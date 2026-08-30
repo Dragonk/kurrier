@@ -33,7 +33,7 @@ it to output. Then set only the Canaille client credentials. Connection strings
 are generated from their matching service passwords.
 
 - `WEB_URL` to `https://kurrier.kmms.ovh`;
-- `ZORAXY_PROXY_NETWORK` to `zoraxy`;
+- `ZORAXY_PROXY_NETWORK` to `proxy-network`;
 - `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` for the dedicated Canaille client.
 
 Validate without starting containers:

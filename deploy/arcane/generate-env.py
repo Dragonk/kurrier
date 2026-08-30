@@ -21,7 +21,7 @@ dav_admin_password_hash = hashlib.sha256(
 ).hexdigest()
 
 content = f"""WEB_URL=https://kurrier.kmms.ovh
-ZORAXY_PROXY_NETWORK=zoraxy
+ZORAXY_PROXY_NETWORK=proxy-network
 KURRIER_DATA_DIR=/mnt/Dane/kurrier
 KURRIER_IMAGE_TAG=pr-616
 NODE_ENV=production
