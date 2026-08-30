@@ -7,6 +7,10 @@ services:
     image: ghcr.io/dragonk/kurrier-web:${KURRIER_IMAGE_TAG:-pr-616}
     restart: unless-stopped
     env_file: .env
+    environment:
+      # Next.js standalone reads HOSTNAME (not HOST); bind outside the container
+      # so Zoraxy can reach this service through proxy-network.
+      HOSTNAME: 0.0.0.0
     depends_on:
       postgres:
         condition: service_healthy

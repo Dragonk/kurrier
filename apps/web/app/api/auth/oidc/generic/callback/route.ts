@@ -2,7 +2,7 @@ import * as client from "openid-client";
 import argon2 from "argon2";
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
+import { connection, NextRequest, NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import {
 	authAccounts,
@@ -24,6 +24,10 @@ import {
 const GENERIC_PROVIDER_NAME = "generic";
 
 export async function GET(request: NextRequest) {
+	// The callback redirects using the deployment's runtime WEB_URL. Mark the
+	// route as runtime-only when Cache Components are enabled.
+	await connection();
+
 	// Behind a reverse proxy, Next.js standalone rewrites request.url's host
 	// to the server's own hostname (e.g. the pod name on Kubernetes), and
 	// openid-client derives the token-exchange redirect_uri from the current

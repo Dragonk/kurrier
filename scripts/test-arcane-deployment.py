@@ -10,11 +10,15 @@ BOOTSTRAP = (ROOT / "deploy/images/kurrier-bootstrap.Dockerfile").read_text()
 BAIKAL = (ROOT / "deploy/images/kurrier-baikal.Dockerfile").read_text()
 ENTRYPOINT = (ROOT / "deploy/images/baikal/entrypoint.sh").read_text()
 GENERATOR = (ROOT / "deploy/arcane/generate-env.py").read_text()
+GENERIC_OIDC_CALLBACK = (
+    ROOT / "apps/web/app/api/auth/oidc/generic/callback/route.ts"
+).read_text()
 
 assert "KURRIER_REPO_DIR" not in COMPOSE
 assert "/db/init" not in COMPOSE
 assert "ports:" not in COMPOSE
 assert "ghcr.io/dragonk/kurrier-baikal:${KURRIER_IMAGE_TAG:-pr-616}" in COMPOSE
+assert "HOSTNAME: 0.0.0.0" in COMPOSE
 assert "DAV_CONFIG_ENCRYPTION_KEY" in COMPOSE
 assert "DAV_ADMIN_PASSWORD_HASH" in COMPOSE
 assert "- ${KURRIER_DATA_DIR:-/mnt/Dane/kurrier}/dav/config:/var/www/baikal/config" in COMPOSE
@@ -39,5 +43,6 @@ assert "DAV_ADMIN_PASSWORD_HASH" in GENERATOR
 assert "GARAGE_RPC_SECRET={secrets.token_hex(32)}" in GENERATOR
 assert "os.open(temporary_path" in GENERATOR
 assert "os.replace(temporary_path, output_path)" in GENERATOR
+assert "await connection();" in GENERIC_OIDC_CALLBACK
 
 print("Repository-free Arcane deployment contract passed.")
