@@ -36,6 +36,7 @@ assert "COPY deploy/images/baikal/entrypoint.sh /usr/local/bin/kurrier-baikal-en
 assert "exec /docker-entrypoint.sh \"$@\"" in ENTRYPOINT
 assert "DAV_CONFIG_ENCRYPTION_KEY" in GENERATOR
 assert "DAV_ADMIN_PASSWORD_HASH" in GENERATOR
+assert "GARAGE_RPC_SECRET={secrets.token_hex(32)}" in GENERATOR
 assert "os.open(temporary_path" in GENERATOR
 assert "os.replace(temporary_path, output_path)" in GENERATOR
 
