@@ -25,7 +25,19 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [web, worker]
+        include:
+          - service: web
+            dockerfile: apps/web/Dockerfile
+          - service: worker
+            dockerfile: apps/worker/Dockerfile
+          - service: bootstrap
+            dockerfile: deploy/images/kurrier-bootstrap.Dockerfile
+          - service: baikal-postgres
+            dockerfile: deploy/images/kurrier-baikal-postgres.Dockerfile
+          - service: baikal
+            dockerfile: deploy/images/kurrier-baikal.Dockerfile
+          - service: garage
+            dockerfile: deploy/images/kurrier-garage.Dockerfile
     steps:
       - name: Validate immutable source and candidate tag
         env:
@@ -47,6 +59,9 @@ jobs:
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
 
+      # GHCR package visibility is managed outside this workflow. The user
+      # must make each package public manually, or use an authorized package-
+      # management token; GITHUB_TOKEN cannot change package visibility here.
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -58,30 +73,21 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: apps/${{ matrix.service }}/Dockerfile
+          file: ${{ matrix.dockerfile }}
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: ghcr.io/dragonk/kurrier-${{ matrix.service }}:${{ inputs.candidate_tag }}
           build-args: |
-            NODE_ENV=production
             WEB_URL=http://localhost:3000
-            JWT_SECRET=build_dummy_jwt_secret
-            APP_SECRET_ENCRYPTION_KEY=build_dummy_app_secret_encryption_key
+            WORKER_URL=http://worker
+            DAV_URL=http://dav
+            JWT_SECRET=build-only-placeholder
+            APP_SECRET_ENCRYPTION_KEY=build-only-placeholder
             S3_REGION=garage
             S3_BUCKET=build-bucket
-            S3_ENDPOINT=http://localhost:3900
-            S3_ACCESS_KEY=build_access_key
-            S3_SECRET_KEY=build_secret_key
+            S3_ENDPOINT=http://garage:3900
+            S3_ACCESS_KEY=build-access-key
+            S3_SECRET_KEY=build-secret-key
             S3_FORCE_PATH_STYLE=true
           provenance: true
           sbom: true
-
-      - name: Make candidate package public
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PACKAGE: kurrier-${{ matrix.service }}
-        run: |
-          set -euo pipefail
-          gh api --method PATCH \
-            "/user/packages/container/${PACKAGE}/visibility" \
-            -f visibility=public
