@@ -539,6 +539,9 @@ importers:
       imapflow:
         specifier: ^1.0.198
         version: 1.2.0
+      ioredis:
+        specifier: ^5.8.1
+        version: 5.8.2
       mailgun.js:
         specifier: ^12.1.0
         version: 12.4.0
@@ -5854,7 +5857,6 @@ packages:
 
   libsql@0.5.22:
     resolution: {integrity: sha512-NscWthMQt7fpU8lqd7LXMvT9pi+KhhmTHAJWUB/Lj6MWa0MKFv0F2V4C6WKKpjCVZl0VwcDz4nOI3CyaT1DDiA==}
-    cpu: [x64, arm64, wasm32, arm]
     os: [darwin, linux, win32]
 
   lightningcss-android-arm64@1.30.2:
@@ -12124,7 +12126,7 @@ snapshots:
 
   '@types/web-push@3.6.4':
     dependencies:
-      '@types/node': 24.13.3
+      '@types/node': 24.10.2
 
   '@types/ws@8.18.1':
     dependencies:
