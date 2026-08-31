@@ -20,7 +20,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [web, worker]
+        include:
+          - service: web
+            dockerfile: apps/web/Dockerfile
+          - service: worker
+            dockerfile: apps/worker/Dockerfile
+          - service: bootstrap
+            dockerfile: deploy/images/kurrier-bootstrap.Dockerfile
+          - service: baikal-postgres
+            dockerfile: deploy/images/kurrier-baikal-postgres.Dockerfile
+          - service: baikal
+            dockerfile: deploy/images/kurrier-baikal.Dockerfile
+          - service: garage
+            dockerfile: deploy/images/kurrier-garage.Dockerfile
     steps:
       - uses: actions/checkout@v4
 
@@ -37,7 +49,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: apps/${{ matrix.service }}/Dockerfile
+          file: ${{ matrix.dockerfile }}
           push: true
           platforms: linux/amd64
           tags: |
