@@ -51,7 +51,12 @@ mock.module("../../../packages/db/src/index.ts", {
 });
 mock.module("../../../packages/common/src/index.ts", {
 	namedExports: {
+		buildThreadingCandidates: () => [],
+		extractThreadingHeader: () => null,
 		generateSnippet: () => "snippet",
+		parseThreadingReferences: () => [],
+		resolveMessageId: (_rawEmail: string, messageId: string) => messageId,
+		selectThreadParent: () => null,
 		upsertMailboxThreadItem: async () => undefined,
 	},
 });
